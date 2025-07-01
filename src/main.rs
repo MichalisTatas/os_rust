@@ -8,6 +8,7 @@ mod vga_buffer;
 // Function called on panic
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
+    println!("{}", _info);
     loop {}
 }
 
@@ -15,5 +16,7 @@ fn panic(_info: &PanicInfo) -> ! {
 pub extern "C" fn _start() -> ! {
     let s = "tatas";
     println!("Hello from println {}", s);
+
+    panic!("This is a test panic!");
     loop{}
 }
