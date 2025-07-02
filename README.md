@@ -1,1 +1,1 @@
-# os_rust
+Personal project: OS in rust
