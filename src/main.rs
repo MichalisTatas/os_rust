@@ -1,7 +1,17 @@
 #![no_std]
 #![no_main]
 
+#![feature(custom_test_frameworks)]
+#![reexport_test_harness_main = "test_main"]
+#![test_runner(crate::test_runner)]
+
 use core::panic::PanicInfo;
+
+#[cfg(test)]
+use crate::custom_test::test_runner;
+
+#[cfg(test)]
+mod custom_test;
 
 mod vga_buffer;
 
@@ -14,9 +24,12 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
-    let s = "tatas";
-    println!("Hello from println {}", s);
+    println!("Hello from main{}", "!");
 
-    panic!("This is a test panic!");
+    #[cfg(test)]
+    test_main();
+
+    // panic!("This is a test panic!");
+
     loop{}
 }
