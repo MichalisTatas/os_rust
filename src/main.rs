@@ -14,12 +14,40 @@ use crate::custom_test::test_runner;
 mod custom_test;
 
 mod vga_buffer;
+mod serial;
 
-// Function called on panic
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum QemuExitCode {
+    Success = 0x10,
+    Failed  = 0x11,
+}
+
+
+// Function called on panic while not in test mode
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     println!("{}", _info);
     loop {}
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    serial_println!("Failed\n");
+    serial_println!("Error: {}\n", _info);
+    exit_qemu(QemuExitCode::Failed);
+    loop {}
+}
+
+pub fn exit_qemu(exit_code: QemuExitCode) {
+    use x86_64::instructions::port::Port;
+
+    unsafe {
+        let mut port = Port::new(0xf4);
+        port.write(exit_code as u32);
+    }
 }
 
 #[unsafe(no_mangle)]
