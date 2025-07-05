@@ -1,13 +1,28 @@
 use crate::{println, serial_println};
+use crate::exit_qemu;
+use crate::vga_buffer::WRITER;
+
+pub trait Testable {
+    fn run(&self) -> ();
+}
+
+impl<T> Testable for T
+where 
+    T: Fn(),
+{
+    fn run(&self) {
+        serial_println!("{} \t", core::any::type_name::<T>());
+        self();
+        serial_println!("[Passed]");
+    }
+}
 
 #[cfg(test)]
-pub fn test_runner(tests: &[&dyn Fn()]) {
-    use crate::{exit_qemu, serial, serial_println};
-
+pub fn test_runner(tests: &[&dyn Testable]) {
     serial_println!("Running {} tests", tests.len());
 
     for test in tests {
-        test();
+        test.run();
     }
 
     exit_qemu(crate::QemuExitCode::Success);
@@ -15,7 +30,5 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 
 #[test_case]
 fn trivial_assertion() {
-    serial_println!("Trivial assertion");
     assert_eq!(1, 1);
-    serial_println!("Passed");
 }

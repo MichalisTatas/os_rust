@@ -35,7 +35,7 @@ fn panic(_info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
-    serial_println!("Failed\n");
+    serial_println!("[Failed]\n");
     serial_println!("Error: {}\n", _info);
     exit_qemu(QemuExitCode::Failed);
     loop {}

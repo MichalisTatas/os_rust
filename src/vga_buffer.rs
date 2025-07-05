@@ -144,3 +144,30 @@ impl fmt::Write for Writer {
         Ok(())
     }
 }
+
+
+/* VGA Buffer Testing */
+
+#[test_case]
+fn test_println_simple() {
+    println!("test println simple output and did not panic");
+}
+
+#[test_case]
+fn test_println_many_lines() {
+    for _ in 0..200 {
+        println!("test println many output and did not panic");
+    }
+}
+
+#[test_case]
+fn test_println_and_check_output() {
+    let s = "Test string that fits on a single line";
+    println!("{}", s);
+    for (i, c) in s.chars().enumerate() {
+        let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
+        assert_eq!(char::from(screen_char.ascii_character), c);
+    }
+}
+
+/* VGA Buffer Testing End */
