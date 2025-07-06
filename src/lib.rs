@@ -7,6 +7,7 @@
 
 pub mod vga_buffer;
 pub mod serial;
+mod interrupts;
 
 use core::panic::PanicInfo;
 
