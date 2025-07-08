@@ -7,6 +7,7 @@
 
 use core::panic::PanicInfo;
 use os_rust::println;
+use os_rust::interrupts;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
@@ -16,6 +17,12 @@ pub extern "C" fn _start() -> ! {
     test_main();
 
     // panic!("This is a test panic!");
+
+    // initialize IDT
+    interrupts::init();
+    divide_by_zero();
+
+    println!("Did not crash on divide by zero exception");
 
     loop{}
 }
@@ -33,4 +40,17 @@ fn panic(_info: &PanicInfo) -> ! {
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     os_rust::test_panic_handler(_info)
+}
+
+
+fn divide_by_zero() {
+    unsafe {
+        core::arch::asm!(
+            "mov dx, 0",
+            "div dx",
+            out("ax") _,  // clobber ax
+            out("dx") _,  // clobber dx
+            options(nostack, nomem, preserves_flags)
+        );
+    }
 }

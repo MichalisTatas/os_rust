@@ -7,9 +7,12 @@
 
 pub mod vga_buffer;
 pub mod serial;
-mod interrupts;
+pub mod interrupts;
 
 use core::panic::PanicInfo;
+
+#[macro_use]
+extern crate lazy_static;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]

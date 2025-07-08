@@ -21,7 +21,7 @@ pub struct Entry {
     reserved:       u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EntryOptions(u16);
 
 impl EntryOptions {
@@ -29,8 +29,8 @@ impl EntryOptions {
         let mut options: u16 = 0;
         // bits 9-10-11 must be one
         // bit  12 must be zero
-        let mask: u16 = 0b0000_1110_0000_0000;
-        options = options | mask;
+        let mask: u16 = 7 << 9; // 7 is 111 shifted by 9
+        options |= mask;
         EntryOptions(options)
     }
 
@@ -56,7 +56,7 @@ impl EntryOptions {
     pub fn disable_interrupts(&mut self, disable: bool) -> &mut Self {
         if disable {
             let mask: u16 = 1 << 8;
-            self.0 &= mask;  // clear the bit 8
+            self.0 &= !mask;  // clear the bit 8
         }
         self
     }
@@ -78,7 +78,7 @@ impl EntryOptions {
 }
 
 impl Entry {
-    fn new(gdt_selector: SegmentSelector, handler: HandlerFunc) -> Self {
+    fn new(gdt_selector: SegmentSelector, handler: extern "C" fn() -> !) -> Self {
         let pointer = handler as u64;
         Entry {
             gdt_selector: gdt_selector,
@@ -109,8 +109,35 @@ impl Idt {
         Idt([Entry::missing(); 16])
     }
 
-    pub fn set_handler(&mut self, entry: u8, handler: HandlerFunc) -> &mut EntryOptions {
+    pub fn set_handler(&mut self, entry: u8, handler: extern "C" fn() -> !) {
         self.0[entry as usize] = Entry::new(segmentation::cs(), handler);
-        &mut self.0[entry as usize].options                
     }
+
+    pub fn load(&self) {
+        use x86_64::instructions::tables::{DescriptorTablePointer, lidt};
+        use core::mem::size_of;
+        use x86_64::VirtAddr;
+
+        let lidt_ptr = DescriptorTablePointer {
+            limit: (size_of::<Self>() - 1) as u16,
+            base: VirtAddr::from_ptr(self.0.as_ptr()),
+        };
+
+        unsafe {
+            lidt(&lidt_ptr)
+        };
+    }
+}
+
+
+/*   IDT testing   */
+
+#[test_case]
+fn test_entry_options_minimal() {
+    assert_eq!(EntryOptions(0b0000_1110_0000_0000), EntryOptions::minimal());
+}
+
+#[test_case]
+fn test_entry_options_new() {
+    assert_eq!(EntryOptions(0b1000_1110_0000_0000), EntryOptions::new());
 }
