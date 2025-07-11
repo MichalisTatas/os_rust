@@ -2,11 +2,32 @@ use crate::println;
 
 mod idt;
 
+// use naked function wrapper because otherwise
+// we have the prologue of the function first 
+// and reading rsp gives us junk
+macro_rules!  handler{
+    ($name: ident) => {{
+        #[unsafe(naked)]
+        extern "C" fn naked_wrapper() -> ! {
+            unsafe {
+                core::arch::naked_asm!(
+                "mov rdi, rsp",                // Move stack pointer to rdi
+                "sub rsp, 8",                  // align the stack pointer
+                "call {handler}",              // Call Rust handler function
+                handler = sym $name,
+                )   
+            } 
+        }    
+        naked_wrapper    
+    }}
+}
+
+
 lazy_static! {
     static ref IDT: idt::Idt = {
         let mut idt = idt::Idt::new();
-        idt.set_handler(0, divide_by_zero_wrapper);
-
+        idt.set_handler(0, handler!(divide_by_zero_handler));
+        idt.set_handler(6, handler!(invalid_opcode_handler));
         idt
     };
 }
@@ -21,26 +42,17 @@ struct ExceptionStackFrame {
     stack_segment: u64,
 }
 
-// use naked function wrapper because otherwise
-// we have the prologue of the function first 
-// and reading rsp gives us junk
-#[unsafe(naked)]
-extern "C" fn divide_by_zero_wrapper() -> ! {
-    unsafe {
-        core::arch::naked_asm!(
-            "mov rdi, rsp",                // Move stack pointer to rdi
-            "call {handler}",              // Call Rust handler function
-            handler = sym divide_by_zero_handler,
-        )
-    }
-}
-
 extern "C" fn divide_by_zero_handler(stack_frame: ExceptionStackFrame) -> ! {
-    println!("{:#?}", stack_frame);
-
-    println!("EXCEPTION: DIVIDE BY ZERO !!");
+    println!("\nEXCEPTION: DIVIDE BY ZERO\n{:#?}", stack_frame );
 
     loop{}
+}
+
+extern  "C" fn invalid_opcode_handler(stack_frame: ExceptionStackFrame) -> ! {
+    println!("\nEXCEPTION: INVALID OPCODE at {:#x}\n{:#?}",
+        stack_frame.instruction_pointer, stack_frame);
+
+    loop {}
 }
 
 pub fn init() {

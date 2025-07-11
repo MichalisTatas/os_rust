@@ -20,7 +20,10 @@ pub extern "C" fn _start() -> ! {
 
     // initialize IDT
     interrupts::init();
-    divide_by_zero();
+
+    unsafe { core::arch::asm!("ud2") };
+
+    // divide_by_zero();
 
     println!("Did not crash on divide by zero exception");
 
