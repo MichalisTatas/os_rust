@@ -6,6 +6,7 @@
 #![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
+use core::ptr;
 use os_rust::println;
 use os_rust::interrupts;
 
@@ -21,11 +22,16 @@ pub extern "C" fn _start() -> ! {
     // initialize IDT
     interrupts::init();
 
-    unsafe { core::arch::asm!("ud2") };
+    /* Cause invalid opcode exception */
+    // unsafe { core::arch::asm!("ud2") };
 
+    /* Cause divide by zero exception */
     // divide_by_zero();
 
-    println!("Did not crash on divide by zero exception");
+    /* Cause page fault exception */
+    unsafe { *(0xdeadbee0 as *mut u64) = 42 };
+
+    println!("Did not provoke exception");
 
     loop{}
 }
