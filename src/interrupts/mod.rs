@@ -1,3 +1,7 @@
+use core::num;
+
+use x86_64::structures::paging::Page;
+
 use crate::println;
 
 mod idt;
@@ -63,6 +67,68 @@ struct ExceptionStackFrame {
     stack_segment: u64,
 }
 
+struct PageFaultErrorCode{
+    // when set, page fault was caused by a page-protection violation. When not-set, it was caused by a non-present page
+    PRESENT: bool,
+    
+    // When set, the page fault was caused by a write access. When not set, it was caused by a read access.
+    WRITE: bool,
+    
+    // When set, the page fault was caused while CPL = 3. This does not necessarily mean that the page fault was a privilege violation.
+    USER: bool,
+    
+    // When set, one or more page directory entries contain reserved bits which are set to 1. This only applies when the PSE or PAE flags in CR4 are set to 1.
+    RESERVED_WRITE: bool,
+    
+    // When set, the page fault was caused by an instruction fetch. This only applies when the No-Execute bit is supported and enabled.
+    INSTRUCTION_FETCH: bool,
+}
+
+impl PageFaultErrorCode {
+    pub fn init(number: u64) -> Self {
+        let mut temp: PageFaultErrorCode = PageFaultErrorCode{
+            PRESENT:           (number & (1 << 0)) != 0,
+            WRITE:             (number & (1 << 1)) != 0,
+            USER:              (number & (1 << 2)) != 0,
+            RESERVED_WRITE:    (number & (1 << 3)) != 0,
+            INSTRUCTION_FETCH: (number & (1 << 4)) != 0,
+        };
+        temp
+    }
+
+    pub fn print_pagefault_errorcode(&self) -> () {
+        if self.PRESENT {
+            println!("PAGE FAULT: Page Protection Violation");
+        }
+        else {
+            println!("PAGE FAULT: Non Present Page");
+        }
+
+        if self.WRITE {
+            println!("PAGE FAULT: Write Access");
+        }
+        else {
+            println!("PAGE FAULT: Read Access");
+        }
+
+        if self.USER {
+            println!("PAGE FAULT: CPL 3");
+        }
+        else {
+            println!("PAGE FAULT: CPL 1 OR 2");
+        }
+
+        if self.RESERVED_WRITE {
+            println!("PAGE FAULT: Reserved bits are set to 1");
+        }
+
+        if self.INSTRUCTION_FETCH {
+            println!("PAGE FAULT: Instruction fetch");
+        }
+    }
+}
+
+
 extern "C" fn divide_by_zero_handler(stack_frame: ExceptionStackFrame) -> ! {
     println!("\nEXCEPTION: DIVIDE BY ZERO\n{:#?}", stack_frame );
 
@@ -77,8 +143,10 @@ extern  "C" fn invalid_opcode_handler(stack_frame: ExceptionStackFrame) -> ! {
 }
 
 extern "C" fn page_fault_handler(stack_frame: ExceptionStackFrame, error_code: u64) -> ! {
-    println!("\nEXCEPTION: PAGE FAULT  with error code {:?}\n{:#?}",
-        error_code, stack_frame);
+    let code: PageFaultErrorCode = PageFaultErrorCode::init(error_code);
+
+    println!("\nEXCEPTION: PAGE FAULT  with error code {:?}\n {:?}\n {:#?}",
+        error_code, code.print_pagefault_errorcode(), stack_frame);
 
     loop{}
 }

@@ -45,6 +45,7 @@ impl EntryOptions {
     pub fn set_present(&mut self, present: bool) -> &mut Self {
         if present {
             let mask: u16 = 1 << 15;
+            // TODO is this correct ?
             self.0 |= mask;
         }
         self
