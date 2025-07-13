@@ -22,11 +22,12 @@ pub extern "C" fn _start() -> ! {
     // initialize IDT
     interrupts::init();
 
+    /* Cause divide by zero exception */
+    // divide_by_zero();
+
     /* Cause invalid opcode exception */
     // unsafe { core::arch::asm!("ud2") };
 
-    /* Cause divide by zero exception */
-    // divide_by_zero();
 
     /* Cause page fault exception */
     unsafe { *(0xdeadbee0 as *mut u64) = 42 };

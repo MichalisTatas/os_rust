@@ -129,20 +129,20 @@ impl PageFaultErrorCode {
 }
 
 
-extern "C" fn divide_by_zero_handler(stack_frame: ExceptionStackFrame) -> ! {
+extern "C" fn divide_by_zero_handler(stack_frame: &ExceptionStackFrame) -> ! {
     println!("\nEXCEPTION: DIVIDE BY ZERO\n{:#?}", stack_frame );
 
     loop{}
 }
 
-extern  "C" fn invalid_opcode_handler(stack_frame: ExceptionStackFrame) -> ! {
+extern  "C" fn invalid_opcode_handler(stack_frame: &ExceptionStackFrame) -> ! {
     println!("\nEXCEPTION: INVALID OPCODE at {:#x}\n{:#?}",
         stack_frame.instruction_pointer, stack_frame);
 
     loop {}
 }
 
-extern "C" fn page_fault_handler(stack_frame: ExceptionStackFrame, error_code: u64) -> ! {
+extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: u64) -> ! {
     let code: PageFaultErrorCode = PageFaultErrorCode::init(error_code);
 
     println!("\nEXCEPTION: PAGE FAULT  with error code {:?}\n {:?}\n {:#?}",
