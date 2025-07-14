@@ -160,7 +160,8 @@ extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: 
 }
 
 extern "C" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) -> !{
-    println!("\nEXCEPTION: BREAKPOINT {:#?}", stack_frame);
+    println!("\nEXCEPTION: BREAKPOINT at {:#x} \n {:#?}",
+        stack_frame.instruction_pointer, stack_frame);
 
     loop {}
 }
