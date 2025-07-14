@@ -28,9 +28,11 @@ pub extern "C" fn _start() -> ! {
     /* Cause invalid opcode exception */
     // unsafe { core::arch::asm!("ud2") };
 
-
     /* Cause page fault exception */
-    unsafe { *(0xdeadbee0 as *mut u64) = 42 };
+    // unsafe { *(0xdeadbee0 as *mut u64) = 42 };
+
+    /* Breakpoint exception */
+    unsafe { core::arch::asm!("int3"); };
 
     println!("Did not provoke exception");
 

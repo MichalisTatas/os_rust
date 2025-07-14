@@ -51,6 +51,7 @@ lazy_static! {
     static ref IDT: idt::Idt = {
         let mut idt = idt::Idt::new();
         idt.set_handler(0, handler!(divide_by_zero_handler));
+        idt.set_handler(3, handler!(breakpoint_handler));
         idt.set_handler(6, handler!(invalid_opcode_handler));
         idt.set_handler(14, handler_with_error_code!(page_fault_handler));
         idt
@@ -86,7 +87,7 @@ struct PageFaultErrorCode{
 
 impl PageFaultErrorCode {
     pub fn init(number: u64) -> Self {
-        let mut temp: PageFaultErrorCode = PageFaultErrorCode{
+        let temp: PageFaultErrorCode = PageFaultErrorCode{
             PRESENT:           (number & (1 << 0)) != 0,
             WRITE:             (number & (1 << 1)) != 0,
             USER:              (number & (1 << 2)) != 0,
@@ -156,6 +157,12 @@ extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: 
         cr2_value, error_code, code.print_pagefault_errorcode(), stack_frame);
 
     loop{}
+}
+
+extern "C" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) -> !{
+    println!("\nEXCEPTION: BREAKPOINT {:#?}", stack_frame);
+
+    loop {}
 }
 
 pub fn init() {
