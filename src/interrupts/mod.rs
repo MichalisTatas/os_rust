@@ -144,9 +144,16 @@ extern  "C" fn invalid_opcode_handler(stack_frame: &ExceptionStackFrame) -> ! {
 
 extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: u64) -> ! {
     let code: PageFaultErrorCode = PageFaultErrorCode::init(error_code);
-
-    println!("\nEXCEPTION: PAGE FAULT  with error code {:?}\n {:?}\n {:#?}",
-        error_code, code.print_pagefault_errorcode(), stack_frame);
+    let cr2_value: u64;
+    unsafe {
+        // cr2 holds the address we tried to access
+        core::arch::asm!(
+            "mov {}, cr2",
+            out(reg) cr2_value,
+        );
+    }
+    println!("\nEXCEPTION: PAGE FAULT  with error code while accesing {:#x} \n with error code {:?}\n {:?}\n {:#?}",
+        cr2_value, error_code, code.print_pagefault_errorcode(), stack_frame);
 
     loop{}
 }
