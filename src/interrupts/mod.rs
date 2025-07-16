@@ -39,8 +39,12 @@ macro_rules!  handler_with_error_code{
                 "mov rdi, rsp",                // Move stack pointer to rdi
                 "sub rsp, 8",                  // align the stack pointer
                 "call {handler}",              // Call Rust handler function
+                
+                // if handler returns
+                "add rsp, 8",
+                "iretq",
                 handler = sym $name,
-                )   
+                )
             } 
         }    
         naked_wrapper    
@@ -130,20 +134,20 @@ impl PageFaultErrorCode {
 }
 
 
-extern "C" fn divide_by_zero_handler(stack_frame: &ExceptionStackFrame) -> ! {
+extern "C" fn divide_by_zero_handler(stack_frame: &ExceptionStackFrame) {
     println!("\nEXCEPTION: DIVIDE BY ZERO\n{:#?}", stack_frame );
 
     loop{}
 }
 
-extern  "C" fn invalid_opcode_handler(stack_frame: &ExceptionStackFrame) -> ! {
+extern  "C" fn invalid_opcode_handler(stack_frame: &ExceptionStackFrame) {
     println!("\nEXCEPTION: INVALID OPCODE at {:#x}\n{:#?}",
         stack_frame.instruction_pointer, stack_frame);
 
     loop {}
 }
 
-extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: u64) -> ! {
+extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: u64) {
     let code: PageFaultErrorCode = PageFaultErrorCode::init(error_code);
     let cr2_value: u64;
     unsafe {
@@ -159,11 +163,9 @@ extern "C" fn page_fault_handler(stack_frame: &ExceptionStackFrame, error_code: 
     loop{}
 }
 
-extern "C" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) -> !{
+extern "C" fn breakpoint_handler(stack_frame: &ExceptionStackFrame) {
     println!("\nEXCEPTION: BREAKPOINT at {:#x} \n {:#?}",
         stack_frame.instruction_pointer, stack_frame);
-
-    loop {}
 }
 
 pub fn init() {
